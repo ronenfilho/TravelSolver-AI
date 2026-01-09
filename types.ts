@@ -8,6 +8,12 @@ export enum TransportMode {
 
 export type TripType = 'ROUND_TRIP' | 'ONE_WAY';
 
+export interface SolverWeights {
+  cost: number;
+  time: number;
+  convenience: number;
+}
+
 export interface Stopover {
   city: string;
   durationDays: number;
@@ -23,6 +29,7 @@ export interface TravelPreferences {
   mainDestination: Stopover; // Destino principal separado
   passengers: number;
   stops: Stopover[]; // Paradas intermediárias
+  solverWeights: SolverWeights; // Pesos para o algoritmo
 }
 
 export interface RouteSegment {
@@ -30,7 +37,7 @@ export interface RouteSegment {
   fromCode: string; // IATA code (ex: GYN)
   to: string;
   toCode: string; // IATA code (ex: ATL)
-  date: string; // YYYY-MM-DD da viagem deste trecho
+  date: string; // DD/MM/YY da viagem deste trecho
   departureTime?: string; // Hora de partida (ex: 14:35)
   flightCode?: string; // Código do voo (ex: G3 1234)
   mode: TransportMode;
@@ -50,7 +57,7 @@ export interface ConsideredFlight {
   departureTime: string; // Hora de partida (ex: 08:20)
   from: string;
   to: string;
-  date: string;
+  date: string; // DD/MM/YY
   price: number;
   duration: string;
   stops: number;

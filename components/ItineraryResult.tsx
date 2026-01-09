@@ -12,15 +12,29 @@ interface Props {
 export const ItineraryResult: React.FC<Props> = ({ solution }) => {
   const [activeTab, setActiveTab] = useState<'none' | 'solver' | 'crawler'>('none');
   
+  const formatForGoogleFlights = (ddmmyy: string) => {
+    const parts = ddmmyy.split('/');
+    if (parts.length !== 3) return ddmmyy;
+    // Assume 21st century for YY (e.g. 26 -> 2026)
+    const year = parts[2].length === 2 ? `20${parts[2]}` : parts[2];
+    const month = parts[1].padStart(2, '0');
+    const day = parts[0].padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   const getFlightLink = (from: string, to: string, date: string) => {
     const cleanFrom = from.match(/[A-Z]{3}/)?.[0] || from.substring(0, 3).toUpperCase();
     const cleanTo = to.match(/[A-Z]{3}/)?.[0] || to.substring(0, 3).toUpperCase();
-    return `https://www.google.com/travel/flights?q=Flights%20from%20${cleanFrom}%20to%20${cleanTo}%20on%20${date}`;
+    const formattedDate = formatForGoogleFlights(date);
+    
+    // FORMATO DEFINITIVO VALIDADO: Flights from [ORIG] to [DEST] on [YYYY-MM-DD]
+    const query = `Flights from ${cleanFrom} to ${cleanTo} on ${formattedDate}`;
+    return `https://www.google.com/travel/flights?q=${encodeURIComponent(query)}`;
   };
 
   const getCarLink = (location: string, date: string) => {
     const cleanLoc = location.match(/[A-Z]{3}/)?.[0] || location.substring(0, 3).toUpperCase();
-    return `https://www.kayak.com.br/cars/${cleanLoc}/${date}`;
+    return `https://www.kayak.com.br/cars/${cleanLoc}/${formatForGoogleFlights(date)}`;
   };
 
   const toggleTab = (tab: 'solver' | 'crawler') => {
@@ -31,7 +45,6 @@ export const ItineraryResult: React.FC<Props> = ({ solution }) => {
   return (
     <div className="flex-1 space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       
-      {/* Botões Discretos para Detalhes Técnicos */}
       <div className="flex justify-end gap-2">
         <button 
           onClick={() => toggleTab('crawler')}
@@ -70,8 +83,7 @@ export const ItineraryResult: React.FC<Props> = ({ solution }) => {
         </div>
       )}
 
-      {/* Resumo de Custos */}
-      <div className="bg-white rounded-xl shadow-lg p-6">
+      <div className="bg-white rounded-xl shadow-lg p-6 border border-slate-200">
         <div className="flex flex-col gap-6 border-b border-slate-100 pb-6 mb-6">
           <div className="flex justify-between items-start">
             <div>
@@ -86,13 +98,13 @@ export const ItineraryResult: React.FC<Props> = ({ solution }) => {
             
             <div className="text-right">
               <p className="text-2xl font-bold text-emerald-600">R$ {solution.totalCostEstimate.toLocaleString()}</p>
-              <p className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">Total Estimado</p>
+              <p className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">Total Estimado (BRL)</p>
             </div>
           </div>
           
-          <div className="grid grid-cols-3 gap-4 bg-slate-50 p-4 rounded-lg">
+          <div className="grid grid-cols-3 gap-4 bg-slate-50 p-4 rounded-lg border border-slate-200">
              <div className="text-center border-r border-slate-200">
-                <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Transporte (Unid.)</p>
+                <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Transporte</p>
                 <p className="text-sm font-semibold text-slate-700">R$ {solution.totalTransportCost.toLocaleString()}</p>
              </div>
              <div className="text-center border-r border-slate-200">
@@ -106,93 +118,92 @@ export const ItineraryResult: React.FC<Props> = ({ solution }) => {
           </div>
         </div>
 
-        {/* Timeline dos Trechos */}
-        <div className="relative border-l-2 border-blue-100 ml-4 space-y-10 pb-4">
+        <div className="relative border-l-4 border-blue-100 ml-4 space-y-10 pb-4">
           {solution.segments.map((segment, index) => (
             <div key={index} className="relative pl-8 group">
-              <div className={`absolute -left-[9px] top-0 w-4 h-4 rounded-full border-2 border-white shadow-sm ${
-                segment.mode === TransportMode.FLIGHT ? 'bg-blue-500' : 'bg-orange-500'
+              <div className={`absolute -left-[11px] top-0 w-5 h-5 rounded-full border-4 border-white shadow-md ${
+                segment.mode === TransportMode.FLIGHT ? 'bg-blue-600' : 'bg-orange-600'
               }`}></div>
 
-              <div className="bg-white border border-slate-200 rounded-lg p-0 hover:border-blue-300 transition-all hover:shadow-lg overflow-hidden">
-                <div className="bg-slate-50 p-3 border-b border-slate-100 flex justify-between items-center">
+              <div className="bg-white border-2 border-slate-200 rounded-xl p-0 hover:border-blue-400 transition-all hover:shadow-xl overflow-hidden shadow-sm">
+                <div className="bg-slate-50 p-3 border-b-2 border-slate-100 flex justify-between items-center">
                    <div className="inline-flex items-center gap-2">
-                      <div className="inline-flex items-center gap-1 bg-white border border-slate-200 px-2 py-0.5 rounded text-xs font-medium text-slate-600">
+                      <div className="inline-flex items-center gap-1 bg-white border-2 border-slate-200 px-2 py-0.5 rounded text-xs font-black text-slate-900">
                         <CalendarDays className="h-3 w-3" />
                         {segment.date}
                       </div>
                       {segment.mode === TransportMode.FLIGHT ? (
-                        <span className="flex items-center gap-1 text-blue-700 text-[10px] font-bold uppercase tracking-tighter">
+                        <span className="flex items-center gap-1 text-blue-900 text-[10px] font-black uppercase tracking-tighter">
                           <Plane className="h-3 w-3" /> Voo {segment.flightCode && <span className="ml-1 px-1 bg-blue-100 rounded text-[9px]">{segment.flightCode}</span>}
                         </span>
                       ) : (
-                        <span className="flex items-center gap-1 text-orange-700 text-[10px] font-bold uppercase tracking-tighter">
+                        <span className="flex items-center gap-1 text-orange-900 text-[10px] font-black uppercase tracking-tighter">
                           <Car className="h-3 w-3" /> Carro
                         </span>
                       )}
                    </div>
-                   <div className="text-[10px] text-slate-400 font-mono font-bold flex items-center gap-3">
-                     {segment.departureTime && <span className="flex items-center gap-1 text-slate-600"><Clock className="h-3 w-3" /> {segment.departureTime}</span>}
+                   <div className="text-[10px] text-slate-500 font-mono font-bold flex items-center gap-3">
+                     {segment.departureTime && <span className="flex items-center gap-1 text-slate-900"><Clock className="h-3 w-3" /> {segment.departureTime}</span>}
                      <span>{segment.distanceKm} KM • {segment.duration}</span>
                    </div>
                 </div>
 
                 <div className="p-4 flex flex-col md:flex-row gap-6">
                   <div className="flex-1 space-y-3">
-                    <div className="flex flex-wrap items-center gap-2 font-bold text-slate-800 text-lg">
+                    <div className="flex flex-wrap items-center gap-2 font-black text-slate-950 text-xl">
                       <span className="flex items-center gap-1">
                         {segment.from} 
-                        <span className="text-[10px] font-mono text-slate-400">({segment.fromCode})</span>
+                        <span className="text-[10px] font-mono text-slate-500">({segment.fromCode})</span>
                       </span>
-                      <ArrowRight className="h-4 w-4 text-blue-300" />
+                      <ArrowRight className="h-5 w-5 text-blue-400 stroke-[3]" />
                       <span className="flex items-center gap-1">
                         {segment.to}
-                        <span className="text-[10px] font-mono text-slate-400">({segment.toCode})</span>
+                        <span className="text-[10px] font-mono text-slate-500">({segment.toCode})</span>
                       </span>
                     </div>
                     <div className="flex flex-col gap-1">
-                      <p className="text-xs text-slate-500 italic bg-blue-50/50 inline-block px-2 py-1 rounded">
+                      <p className="text-xs text-slate-700 font-bold italic bg-blue-50 border border-blue-100 inline-block px-2 py-1 rounded">
                         {segment.details}
                       </p>
                       {segment.flightCode && (
-                        <p className="text-[10px] text-slate-400 flex items-center gap-1 mt-1">
-                          <Tag className="h-2.5 w-2.5" /> Identificador Técnico: {segment.flightCode}
+                        <p className="text-[10px] text-slate-500 font-bold flex items-center gap-1 mt-1">
+                          <Tag className="h-2.5 w-2.5" /> Identificador: {segment.flightCode}
                         </p>
                       )}
                     </div>
                   </div>
 
-                  <div className="flex flex-col gap-2 min-w-[220px] bg-slate-50/50 p-3 rounded-lg border border-slate-100">
+                  <div className="flex flex-col gap-2 min-w-[220px] bg-slate-100 p-3 rounded-xl border-2 border-slate-200">
                     <div className="flex justify-between items-center text-xs">
-                       <span className="text-slate-500">Transporte (Unid.)</span>
-                       <span className="font-bold text-slate-700">R$ {segment.costEstimate.toLocaleString()}</span>
+                       <span className="text-slate-600 font-bold">Transporte (Unid.)</span>
+                       <span className="font-black text-slate-950">R$ {segment.costEstimate.toLocaleString()}</span>
                     </div>
 
                     {segment.stayCostEstimate > 0 && (
                       <div className="flex justify-between items-center text-xs">
-                         <span className="text-slate-500 flex items-center gap-1">
+                         <span className="text-slate-600 font-bold flex items-center gap-1">
                            <BedDouble className="h-3 w-3" /> Hospedagem
                          </span>
-                         <span className="font-bold text-slate-700">R$ {segment.stayCostEstimate.toLocaleString()}</span>
+                         <span className="font-black text-slate-950">R$ {segment.stayCostEstimate.toLocaleString()}</span>
                       </div>
                     )}
 
                     {segment.foodCostEstimate > 0 && (
                       <div className="flex justify-between items-center text-xs">
-                         <span className="text-slate-500 flex items-center gap-1">
+                         <span className="text-slate-600 font-bold flex items-center gap-1">
                            <Utensils className="h-3 w-3" /> Alimentação
                          </span>
-                         <span className="font-bold text-slate-700">R$ {segment.foodCostEstimate.toLocaleString()}</span>
+                         <span className="font-black text-slate-950">R$ {segment.foodCostEstimate.toLocaleString()}</span>
                       </div>
                     )}
                     
-                    <div className="pt-2 border-t border-slate-200 mt-1">
+                    <div className="pt-2 border-t-2 border-slate-200 mt-1">
                       {segment.mode === TransportMode.FLIGHT ? (
                         <a 
                           href={getFlightLink(segment.fromCode, segment.toCode, segment.date)}
                           target="_blank"
                           rel="noreferrer"
-                          className="flex items-center justify-center gap-1.5 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-bold uppercase rounded transition-all shadow-sm hover:shadow-md"
+                          className="flex items-center justify-center gap-1.5 px-3 py-2.5 bg-blue-700 hover:bg-black text-white text-[10px] font-black uppercase rounded-lg transition-all shadow-md active:scale-95"
                         >
                           BUSCAR VOOS REAIS <ExternalLink className="h-3 w-3" />
                         </a>
@@ -201,7 +212,7 @@ export const ItineraryResult: React.FC<Props> = ({ solution }) => {
                           href={getCarLink(segment.fromCode, segment.date)}
                           target="_blank"
                           rel="noreferrer"
-                          className="flex items-center justify-center gap-1.5 px-3 py-2 bg-orange-500 hover:bg-orange-600 text-white text-[10px] font-bold uppercase rounded transition-all shadow-sm hover:shadow-md"
+                          className="flex items-center justify-center gap-1.5 px-3 py-2.5 bg-orange-600 hover:bg-black text-white text-[10px] font-black uppercase rounded-lg transition-all shadow-md active:scale-95"
                         >
                           Ver Aluguel <ExternalLink className="h-3 w-3" />
                         </a>
@@ -209,20 +220,18 @@ export const ItineraryResult: React.FC<Props> = ({ solution }) => {
                     </div>
                   </div>
                 </div>
-
               </div>
             </div>
           ))}
           
-          <div className="absolute -left-[9px] bottom-0 w-4 h-4 rounded-full bg-slate-800 border-2 border-white shadow-sm"></div>
+          <div className="absolute -left-[10px] bottom-0 w-5 h-5 rounded-full bg-slate-950 border-4 border-white shadow-md"></div>
           <div className="pl-8 pt-2">
-            <span className="text-sm font-bold text-slate-800">
+            <span className="text-sm font-black text-slate-950 uppercase tracking-tighter">
               {solution.tripType === 'ROUND_TRIP' ? 'Retorno Concluído' : 'Chegada ao Destino Final'}
             </span>
           </div>
         </div>
       </div>
-
     </div>
   );
 };
