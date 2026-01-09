@@ -1,0 +1,5 @@
+{
+  "name": "TravelSolver AI",
+  "description": "An intelligent travel route solver that optimizes trips from Brazil to Atlanta with multi-city stopovers using AI reasoning.",
+  "requestFramePermissions": []
+}
