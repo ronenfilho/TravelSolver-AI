@@ -89,10 +89,8 @@ const formatDateToBr = (isoDate?: string) => {
 };
 
 export const solveTravelRoute = async (prefs: TravelPreferences): Promise<ItinerarySolution> => {
-  const apiKey = process.env.API_KEY;
-  if (!apiKey) throw new Error("API_KEY not found");
-
-  const ai = new GoogleGenAI({ apiKey });
+  // Fix: Direct initialization using process.env.API_KEY as per guidelines
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   
   const mainDestDate = formatDateToBr(prefs.mainDestination.specificDate);
   
@@ -129,6 +127,7 @@ export const solveTravelRoute = async (prefs: TravelPreferences): Promise<Itiner
     },
   });
 
+  // Fix: Directly accessing .text property as per guidelines (it is a property, not a method)
   const jsonStr = response.text?.trim() || "{}";
   return JSON.parse(jsonStr) as ItinerarySolution;
 };
